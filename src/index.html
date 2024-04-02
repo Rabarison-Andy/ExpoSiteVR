@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer type="module"></script>
+    <title>Exposition | Vision de l'imperfection</title>
+</head>
+<body>
+    <video id="video" 
+    playsinline
+    webkit-playsinline
+    muted
+    loop
+    autoplay
+    crossorigin="anonymous">
+        <source src="/assets/videos/Eyes.mp4" type="video/mp4">
+    </video>
+
+    <canvas id="canvas" class="webgl">  
+    </canvas> 
+
+    <audio id="introAudio" preload="auto" style="display: none">
+        <source src="/assets/voices/Intro.ogg" type="audio/ogg">
+        Your browser does not support the audio element.
+      </audio>
+
+    <div id="paintingInfoDiv" class="hidden">
+        <img id="paintingImage" src="" alt="Painting Image">
+        <div id="paintingDetails"></div>
+        <button id="returnButton">Retour à l'exposition</button>
+    </div>
+</body>
+</html>
+<script>
+
+
+</script>

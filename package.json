@@ -1,0 +1,18 @@
+{
+    "scripts": {
+        "start": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "name": "ExpositionVR",
+    "main": "index.html",
+    "devDependencies": {
+        "vite": "^5.2.6"
+    },
+    "dependencies": {
+        "@react-three/xr": "^5.7.1",
+        "cannon": "^0.6.2",
+        "gltf-loader": "^1.0.0",
+        "three": "^0.162.0"
+    }
+}
