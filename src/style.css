@@ -1,73 +1,294 @@
+/* --- POLICE CUSTOM ET TEXTE ANIMÉ (BLUR TEXT) --- */
+@font-face {
+    font-family: 'Great Vibes';
+    src: url('/assets/fonts/Great Vibes Regular.woff2') format('woff2'),
+         url('/assets/fonts/Great Vibes Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
 * {
     margin: 0;
-    padding: 0
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    overflow: hidden; /* Empêche le scroll sur la page */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#subtitles {
+    position: fixed;
+    bottom: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    text-align: center;
+    z-index: 10; /* Au-dessus du canvas (1) mais sous la modale (50) */
+    pointer-events: none; /* Ne bloque pas les clics de la souris */
+    display: none; /* Caché par défaut */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    letter-spacing: 1px;
+}
+
+.title-reveal {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Great Vibes', cursive, sans-serif;
+    font-size: 6rem;
+    color: #ffffff;
+    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    z-index: 20;
+    pointer-events: none;
+    display: flex;
+    gap: 20px;
+}
+
+.title-word {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(-50px); /* Vient d'en haut comme dans ReactBits */
+    transition: opacity 1s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                filter 1s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                transform 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.title-word.visible {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0);
+}
+
+.title-word.fade-out {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(50px); /* Repart vers le bas */
 }
 
 .webgl {
     position: fixed;
     top: 0;
     left: 0;
-    outline: none
+    outline: none;
+    z-index: 1;
 }
 
 video {
-    display: none
+    display: none;
 }
 
 .hidden {
-    display: none
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important; /* Empêche de cliquer sur un élément invisible */
 }
 
-#paintingInfoDiv {
-    position: relative;
-    background-color: #000000d5;
+/* --- ÉCRAN DE DÉMARRAGE --- */
+#startScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    transition: opacity 0.8s ease, visibility 0.8s ease; 
+    overflow: hidden; /* Empêche l'effet radial de faire scroller la page */
+}
+
+/* 1. L'image de base floutée */
+#startBackground {
+    position: absolute;
+    top: -5%;
+    left: -5%;
+    width: 110%;
+    height: 110%;
+    background-image: url('/assets/images/Vision Imperfection.png'); 
+    background-size: cover;
+    background-position: center;
+    filter: blur(8px);
+    z-index: -2;
+}
+
+#startBackground::before,
+#startBackground::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: inherit;
+    background-size: cover;
+    background-position: center;
+    mix-blend-mode: screen;
+    opacity: 0.6;
+}
+
+#startBackground::before {
+    transform: scale(1.08) translate(-12px, 0);
+    filter: blur(15px);
+    background-color: rgba(255, 0, 0, 0.5);
+    background-blend-mode: multiply;
+}
+
+#startBackground::after {
+    transform: scale(1.08) translate(12px, 0);
+    filter: blur(15px);
+    background-color: rgba(0, 255, 255, 0.5);
+    background-blend-mode: multiply;
+}
+
+#startScreen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.85) 100%);
+    z-index: -1;
+}
+
+.start-content {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 40px;
+    border-radius: 12px;
+    backdrop-filter: blur(5px);
+}
+
+.start-content h1 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.controls-info {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin: 30px 0;
+}
+
+.controls-info img {
+    height: 80px; /* À ajuster selon tes SVG */
+}
+
+#startButton {
+    background-color: #ffffff;
+    color: #000000;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    font-weight: bold;
+}
+
+#startButton:hover {
+    background-color: #dddddd;
+    transform: scale(1.05);
+}
+
+/* --- MODALE DES PEINTURES (Design Amélioré) --- */
+#paintingInfoWrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    backdrop-filter: blur(8px);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.75) 0%, rgba(235, 230, 240, 0.85) 100%);
+    z-index: 50;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 50px;    
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.6s ease-in-out, visibility 0.6s ease-in-out, backdrop-filter 0.6s ease-in-out;
+}
+
+#paintingLayoutContainer {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 60px;
+}
+
+#paintingTextColumn {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background-color: #f0f0f0;
-    padding: 20px;
-    width: 300px;
-    box-shadow: 0 0 10px #00000026
+    color: #333;
 }
 
-#paintingImage {
-    width: 25%;
-    height: auto;
-    display: block;
-    margin: auto
+#paintingArtist {
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    color: #888;
 }
 
-#paintingDetails {
-    text-align: center;
-    margin: 20px 0
+#paintingTitle {
+    font-size: 3.5rem;
+    font-weight: 400;
+    margin-bottom: 10px;
+    font-family: 'Georgia', 'Times New Roman', serif; /* Donne un côté galerie d'art */
+    color: #222;
 }
 
-#paintingDetails h2 {
-    font-size: 20px;
-    color: #333
+#paintingYear {
+    font-size: 1rem;
+    margin-bottom: 30px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-#paintingDetails p {
-    font-size: 16px;
-    color: #666
+#paintingDescription {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    margin-bottom: 40px;
+    color: #555;
 }
 
 #returnButton {
-    display: inline-block;
-    background-color: #008cba;
-    color: #fff;
+    align-self: flex-start;
+    background: transparent;
+    border: 1px solid #aaa;
+    color: #555;
     padding: 10px 24px;
-    text-align: center;
-    text-decoration: none;
-    font-size: 16px;
-    transition-duration: .4s;
+    border-radius: 30px;
     cursor: pointer;
-    margin: 4px 2px 4px 45%
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.8rem;
+    transition: all 0.3s ease;
 }
 
 #returnButton:hover {
-    background-color: #fff;
-    color: #000;
-    border: 2px solid #008CBA
+    background: #333;
+    border-color: #333;
+    color: #fff;
+}
+
+#paintingImageColumn {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+}
+
+#paintingImage {
+    max-width: 100%;
+    max-height: 80vh;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15); /* Légère ombre pour détacher l'image */
 }

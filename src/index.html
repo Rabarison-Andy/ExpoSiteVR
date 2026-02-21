@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,32 +8,44 @@
     <title>Exposition | Vision de l'imperfection</title>
 </head>
 <body>
-    <video id="video" 
-    playsinline
-    webkit-playsinline
-    muted
-    loop
-    autoplay
-    crossorigin="anonymous">
+    <div id="startScreen">
+        <div id="startBackground"></div>
+        <div class="start-content">
+            <h1>Vision Imperfection</h1>
+            <div class="controls-info">
+                <img src="/assets/images/controls1.svg" alt="Contrôles de déplacement">
+                <img src="/assets/images/controls2.svg" alt="Contrôles de la caméra">
+            </div>
+            <button id="startButton">Entrer dans l'exposition</button>
+        </div>
+    </div>
+
+    <video id="video" aria-hidden="true" playsinline webkit-playsinline muted loop crossorigin="anonymous">
         <source src="/assets/videos/Eyes.mp4" type="video/mp4">
     </video>
 
-    <canvas id="canvas" class="webgl">  
-    </canvas> 
+    <div id="subtitles"></div>
 
-    <audio id="introAudio" preload="auto" style="display: none">
-        <source src="/assets/voices/Intro.ogg" type="audio/ogg">
-        Your browser does not support the audio element.
-      </audio>
+    <div id="titleReveal" class="title-reveal"></div>
 
-    <div id="paintingInfoDiv" class="hidden">
-        <img id="paintingImage" src="" alt="Painting Image">
-        <div id="paintingDetails"></div>
-        <button id="returnButton">Retour à l'exposition</button>
+    <canvas id="canvas" class="webgl"></canvas>
+
+    <div id="paintingInfoWrapper" class="hidden">
+        <div id="paintingLayoutContainer">
+            
+            <div id="paintingTextColumn">
+                <h3 id="paintingArtist"></h3>
+                <h1 id="paintingTitle"></h1>
+                <h4 id="paintingYear"></h4>
+                <p id="paintingDescription"></p>
+                <button id="returnButton">Retour au musée</button>
+            </div>
+
+            <div id="paintingImageColumn">
+                <img id="paintingImage" src="" alt="Peinture">
+            </div>
+
+        </div>
     </div>
 </body>
 </html>
-<script>
-
-
-</script>
