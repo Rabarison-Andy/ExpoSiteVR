@@ -3,12 +3,12 @@ import * as THREE from 'three'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js'
+import { Sky } from 'three/examples/jsm/objects/Sky.js'
 
 const canvas = document.getElementById('canvas')
 const sizes = { width: window.innerWidth, height: window.innerHeight }
 
 const scene = new THREE.Scene()
-scene.background = new THREE.Color(0xffffff)
 
 const camera = new THREE.PerspectiveCamera(70, sizes.width / sizes.height, 1, 10000)
 camera.position.y = 1.9
@@ -25,6 +25,42 @@ renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
 renderer.toneMapping = THREE.ACESFilmicToneMapping
 renderer.toneMappingExposure = 1
+
+const sky = new Sky()
+sky.scale.setScalar(450000)
+scene.add(sky)
+
+const skyUniforms = sky.material.uniforms
+skyUniforms['turbidity'].value = 8
+skyUniforms['rayleigh'].value = 1.5
+skyUniforms['mieCoefficient'].value = 0.005
+skyUniforms['mieDirectionalG'].value = 0.82
+
+// Direction du soleil : 28° au-dessus de l'horizon, azimut 200°
+const sunDir = new THREE.Vector3()
+const sunPhi   = THREE.MathUtils.degToRad(90 - 28)
+const sunTheta = THREE.MathUtils.degToRad(200)
+sunDir.setFromSphericalCoords(1, sunPhi, sunTheta)
+skyUniforms['sunPosition'].value.copy(sunDir)
+
+scene.fog = new THREE.Fog(0xbbd4ee, 80, 350)
+
+const sunLight = new THREE.DirectionalLight(0xfff5e0, 2.5)
+sunLight.position.set(sunDir.x * 150, sunDir.y * 150, sunDir.z * 150)
+sunLight.castShadow = true
+sunLight.shadow.mapSize.width  = 2048
+sunLight.shadow.mapSize.height = 2048
+sunLight.shadow.camera.near   = 1
+sunLight.shadow.camera.far    = 400
+sunLight.shadow.camera.left   = -80
+sunLight.shadow.camera.right  =  80
+sunLight.shadow.camera.top    =  80
+sunLight.shadow.camera.bottom = -80
+sunLight.shadow.bias = -0.001
+scene.add(sunLight)
+
+const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x4a6e30, 0.6)
+scene.add(hemiLight)
 
 const controls = new PointerLockControls(camera, document.body);
 
@@ -156,6 +192,32 @@ const plane = new THREE.Mesh(planeGeometry, planeMaterial)
 plane.rotation.x = -Math.PI / 2
 plane.position.set(0, 0.001, 0)
 scene.add(plane)
+
+
+const grassGeometry = new THREE.PlaneGeometry(600, 600, 100, 100)
+
+const gPos = grassGeometry.attributes.position
+const gColors = new Float32Array(gPos.count * 3)
+for (let i = 0; i < gPos.count; i++) {
+    const gx = gPos.getX(i)
+    const gz = gPos.getY(i)
+    const h1 = Math.sin(gx * 127.1 + gz * 311.7) * 43758.5453
+    const h2 = Math.sin(gx * 269.5 + gz * 183.3) * 43758.5453
+    const n1 = h1 - Math.floor(h1)  // 0→1
+    const n2 = h2 - Math.floor(h2)  // 0→1
+    const noise = (n1 + n2) * 0.5
+    gColors[i * 3]     = 0.07 + noise * 0.12  // R
+    gColors[i * 3 + 1] = 0.22 + noise * 0.22  // G
+    gColors[i * 3 + 2] = 0.03 + noise * 0.07  // B
+}
+grassGeometry.setAttribute('color', new THREE.BufferAttribute(gColors, 3))
+
+const grassMaterial = new THREE.MeshLambertMaterial({ vertexColors: true })
+const grassMesh = new THREE.Mesh(grassGeometry, grassMaterial)
+grassMesh.rotation.x = -Math.PI / 2
+grassMesh.position.set(0, -0.06, 0)
+grassMesh.receiveShadow = true
+scene.add(grassMesh)
 
 const geometry = new THREE.SphereGeometry(4, 64, 32)
 const material = new THREE.MeshBasicMaterial({
@@ -312,11 +374,11 @@ startButton.addEventListener('click', () => {
             subtitlesData.forEach(sub => {
                 setTimeout(() => {
                     if (sub.text === "") {
-                        subtitlesDiv.style.display = 'none'; // Cache la bulle quand c'est fini
+                        subtitlesDiv.style.display = 'none';
                     } else {
                         subtitlesDiv.innerText = sub.text;
                     }
-                }, sub.time * 1000); // *1000 pour convertir les secondes en millisecondes
+                }, sub.time * 1000);
             });
 
         }, 4000);
@@ -367,15 +429,12 @@ const removeObject = () => {
     }
 }
 
-// --- CONFIGURATION DÉPLACEMENT ET COLLISIONS ---
 const walkSpeed = 2.5;
-// CORRECTION ICI : 0.8 au lieu de 2.3 pour la taille de ta hitbox !
-const collisionDistance = 0.8; 
+const collisionDistance = 2.3; 
 const collisionRaycaster = new THREE.Raycaster();
 let prevTime = performance.now();
 
 const tick = () => {
-    // Calcul constant du temps pour éviter un bond géant
     const time = performance.now();
     let deltaMove = (time - prevTime) / 1000;
     prevTime = time;
@@ -387,7 +446,6 @@ const tick = () => {
         return; 
     }
 
-    // Sécurité au cas où on perd le focus (pour éviter de traverser les murs)
     deltaMove = Math.min(deltaMove, 0.1);
 
     const elapsedTime = clock.getElapsedTime()
@@ -420,7 +478,6 @@ const tick = () => {
         cameraPitch += (targetPitch - cameraPitch) * smoothFactor;
         camera.rotation.set(cameraPitch, cameraYaw, 0, 'YXZ');
 
-        // On bloque UNIQUEMENT le déplacement physique pendant les 21 premières secondes
         if (elapsedTime >= 21) {
             let moveX = 0;
             let moveZ = 0;
@@ -435,7 +492,6 @@ const tick = () => {
                 const dirGlobal = dirLocal.applyMatrix4(moveMatrix);
                 const distance = walkSpeed * deltaMove;
 
-                // Test axe X - Sécurisation des vecteurs
                 const dirGlobalX = new THREE.Vector3(dirGlobal.x, 0, 0);
                 if (dirGlobalX.lengthSq() > 0.0001) {
                     dirGlobalX.normalize();
@@ -446,7 +502,6 @@ const tick = () => {
                     }
                 }
 
-                // Test axe Z - Sécurisation des vecteurs
                 const dirGlobalZ = new THREE.Vector3(0, 0, dirGlobal.z);
                 if (dirGlobalZ.lengthSq() > 0.0001) {
                     dirGlobalZ.normalize();
